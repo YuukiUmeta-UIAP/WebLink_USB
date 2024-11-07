@@ -1,0 +1,7 @@
+node_modules
+data
+.parcel-cache
+promo
+dist
+src/styles/style.css
+src/styles/style.css.map

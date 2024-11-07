@@ -1,0 +1,31 @@
+{
+  "name": "weblink-usb",
+  "source": "index.html",
+  "targets": {
+    "default": {
+      "distDir": "./dist",
+      "sourceMap": true,
+      "publicUrl": "./"
+    }
+  },
+  "parcel-namer-custom": {
+    "index.js$": "[name].[hash].[ext]",
+    ".scss$": "[name].[hash].[type]",
+    ".png$": "[folder]/[name].[ext]"
+  },
+  "scripts": {
+    "start": "parcel",
+    "build": "parcel build"
+  },
+  "dependencies": {
+    "@parcel/transformer-sass": "^2.12.0",
+    "parcel": "^2.12.0",
+    "parcel-namer-custom": "^0.2.0",
+    "parcel-namer-sorter": "^0.1.8",
+    "parcel-resolver-ignore": "^2.2.0"
+  },
+  "devDependencies": {
+    "@parcel/optimizer-cssnano": "^2.12.0",
+    "@parcel/optimizer-terser": "^2.12.0"
+  }
+}

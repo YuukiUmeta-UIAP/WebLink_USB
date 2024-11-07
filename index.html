@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>WebLink-USB</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      media="screen"
+      href="src/styles/style.scss"
+    />
+    <link rel="apple-touch-icon" href="src/images/icon.png"/>
+    <link rel="icon" sizes="32x32" type="image/png" href="src/images/icon.png" />
+  </head>
+  <body class="preload-transitions">
+    <div class="updater">
+      <div class="top-cell">
+        <div class="content hidden">
+          <div class="top-buttons hidden">
+            <button id="tooltip-programmer-button" class="side-button-square tooltip active">p</button>
+            <button id="tooltip-backups-button" class="side-button-square tooltip">b</button>
+            <button id="tooltip-terminal-button" class="side-button-square tooltip">t</button>
+          </div>
+          <div class="top-container">
+            <div class="card terminal hidden-down closed">
+              <button class="but connect">connect to the terminal</button>
+              <textarea readonly="yes" class="terminal-text" id="terminal"></textarea>
+              <div class="terminal-controls hidden"><input type="text" id="terminal-input"><button id="terminal-send">send</button><button id="terminal-scroll">s</button><button id="terminal-close">x</button></div>
+            </div>
+            <div class="card hidden-down backups">
+              <div class="absolute-center-container">
+                <p>There are no saved backups yet.</p>
+              </div>
+              
+            </div>
+            <div class="card programmer">
+              <div class="chip-info">
+                <div class="chip-info-content"></div>
+                <!-- <p>CH32V003</p> -->
+                <div class="absolute-center-container">
+                  <button id="connect-flasher" class="but connect">connect</button>
+                </div>
+              </div>
+              <div class="program-options">
+                <div id="tooltip-do-backup-check" class="set-lbl tooltip">
+                  <input type="checkbox" id="do-backup-check" class="setting" default="true"/>
+                  <label for="do-backup-check">Do backup</label>
+                </div>
+                <div id="tooltip-clean-check" class="set-lbl tooltip">
+                  <input type="checkbox" id="clean-check" class="setting" />
+                  <label for="clean-check">Program clean</label>
+                </div>
+              </div>
+              <div class="tooltip-container">
+                <p></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="middle-cell">
+          <div id="tooltip-file-container" class="file-container tooltip">
+            <input type="file" id="firmware_file" class="file-input"/>
+            <label for="firmware_file" class="file-label">Select binary</label>
+          </div>
+        <button class="but flash hidden"><span>flash</span></button>
+      </div>
+      <div class="bottom-cell">
+        <div class="micro closed">
+          <div class="content hidden">
+            <div class="group-horizontal">
+              <label id="tooltip-address" class="set-lbl tooltip" for="address">address:</label>
+              <label id="tooltip-size" class="set-lbl tooltip" for="size">size:</label>
+            </div>
+            <div class="group-horizontal">
+              <input
+                type="text"
+                pattern="[xXa-fA-F\d]+"
+                maxlength="11"
+                name="address"
+                id="address"
+                class="tooltip"
+                placeholder="0x08000000"
+                style="margin-right: 1rem;"
+              />
+              <input
+                type="text"
+                pattern="[0-9]+"
+                maxlength="11"
+                name="size"
+                id="size"
+                class="tooltip"
+                placeholder="16384"
+                style="margin-right: 1rem;"
+              />
+            </div>
+            <div class="group-horizontal">
+              <button class="but tooltip" id="read"><span>read</span></button>
+              <button class="but tooltip" id="erase"><span>erase</span></button>
+            </div>
+          </div>
+        </div>
+        <!-- <div class="micro clone"></div> -->
+      </div>
+    </div>
+    <div class="settings-container hide" id="settings">
+      <div class="set-buttons">
+        <!-- <button class="wifi but">wifi</button> -->
+        <button class="set but">settings</button> 
+      </div>
+      <div class="cards">
+        <div class="set card">
+          <div class="content">
+            <div class="set-lbl">
+              <input type="checkbox" id="skip-zero" class="setting" default="true" />
+              <label for="skip-zero">Skip zero blocks</label>
+            </div>
+            <label for="num-backups" class="set-lbl">Number of backups:</label>
+            <input
+              type="text"
+              minlength="1"
+              maxlength="2"
+              pattern="-?[0-9]+"
+              id="num-backups"
+              class="setting"
+              default="10"
+            />
+            <!-- <label for="poll-delay" class="set-lbl">Terminal polling delay:</label>
+            <input
+              type="text"
+              minlength="1"
+              maxlength="5"
+              pattern="[0-9]+"
+              id="poll-delay"
+              class="setting"
+              default="1000"
+            /> -->
+            <label for="usb-bootloader-name" class="set-lbl">USB bootloader ProductName:</label>
+            <input
+              type="text"
+              id="usb-bootloader-name"
+              placeholder="cnlohr rv003usb"
+              class="setting"
+            />
+            <label for="usb-name" class="set-lbl">USB ProductName:</label>
+            <input
+              type="text"
+              id="usb-name"
+              placeholder="CNLohr RV003 Custom Device"
+              class="setting"
+            />
+            <div class="set-lbl">
+              <input type="checkbox" id="show-tooltips" class="setting" default="true" />
+              <label for="show-tooltips">Show tooltips</label>
+            </div>
+          </div>
+          <div class="confirm-buttons">
+            <button class="but save">save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="popup-container">
+      <div class="popup">
+        <div class="confirm-buttons">
+        </div>
+        <div class="content"></div>
+      </div>
+    </div>
+    <div class="about">
+      <p id="sw_version">v.0.9a</p>
+    </div>
+    <div class="settings-button"></div>
+    <script type="module" src="src/js/index.js"></script>
+  </body>
+</html>
