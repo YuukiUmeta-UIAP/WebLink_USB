@@ -27,7 +27,7 @@
             <div class="card terminal hidden-down closed">
               <button class="but connect">connect to the terminal</button>
               <textarea readonly="yes" class="terminal-text" id="terminal"></textarea>
-              <div class="terminal-controls hidden"><input type="text" id="terminal-input"><button id="terminal-send">send</button><button id="terminal-scroll">s</button><button id="terminal-close">x</button></div>
+              <div class="terminal-controls hidden"><input type="text" id="terminal-input"><button id="terminal-send">send</button><button id="terminal-unlock">u</button><button id="terminal-scroll">s</button><button id="terminal-close">x</button></div>
             </div>
             <div class="card hidden-down backups">
               <div class="absolute-center-container">
@@ -117,6 +117,10 @@
               <input type="checkbox" id="skip-zero" class="setting" default="true" />
               <label for="skip-zero">Skip zero blocks</label>
             </div>
+            <div class="set-lbl">
+              <input type="checkbox" id="skip-filter" class="setting" default="true" />
+              <label for="skip-filter">Don't filter devices</label>
+            </div>
             <label for="num-backups" class="set-lbl">Number of backups:</label>
             <input
               type="text"
@@ -127,6 +131,7 @@
               class="setting"
               default="10"
             />
+            
             <!-- <label for="poll-delay" class="set-lbl">Terminal polling delay:</label>
             <input
               type="text"
@@ -151,6 +156,10 @@
               placeholder="CNLohr RV003 Custom Device"
               class="setting"
             />
+            <div class="set-lbl">
+              <input type="checkbox" id="disable-transitions" class="setting" default="false" />
+              <label for="disable-transitions">Disable animations</label>
+            </div>
             <div class="set-lbl">
               <input type="checkbox" id="show-tooltips" class="setting" default="true" />
               <label for="show-tooltips">Show tooltips</label>

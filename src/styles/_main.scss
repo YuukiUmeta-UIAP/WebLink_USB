@@ -322,6 +322,7 @@ a {
         align-content: center;
         overflow:hidden;
         transform: translateY(0);
+        padding: 0;
         // &.closed {
         //   transform: translateY(-150%);
         // }
@@ -759,6 +760,13 @@ a {
   &:not(#read):after {
     width: calc(100% - var(--erase-progress));
   }
+}
+
+.notransition {
+  -webkit-transition: none !important;
+  -moz-transition: none !important;
+  -o-transition: none !important;
+  transition: none !important;
 }
 
 @keyframes micro_right {

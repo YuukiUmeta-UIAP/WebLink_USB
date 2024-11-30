@@ -3,7 +3,6 @@ export class Settings {
   constructor(inputs) {
     this.inputs = inputs;
     this.inputs.forEach((el) => {
-      // console.log(el);
       const local = localStorage.getItem(el.id);
       if (local) {
         this[el.id] = JSON.parse(local);
@@ -28,7 +27,7 @@ export class Settings {
         this._setValue(el, JSON.parse(local));
       } else {
         if (el.getAttribute("default")) {
-          this._setValue(el, el.getAttribute("default"));
+          this._setValue(el, JSON.parse(el.getAttribute("default")));
         }
       }
     });
@@ -67,7 +66,12 @@ export class Settings {
       if (el.type === "checkbox") {
         value = el.checked;
       } else {
-        value = el.value;
+        if (el.type === "text" && el.value == "") {
+          value = el.getAttribute("placeholder");
+          if (!value || value == "") value = el.getAttribute("default");
+        } else {
+          value = el.value;
+        }
       }
     }
     return value;

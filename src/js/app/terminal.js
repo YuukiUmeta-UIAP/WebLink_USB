@@ -1,115 +1,150 @@
 const maxLinesTerminal = 500;
+let dataCounter = 0;
+let dataArray = new Uint8Array(4096);
+const T1COEFF = 2;
+
+function arrayToText(array) {
+  let text = "";
+  for (let i = 0; i < array.length; i++) {
+    if (array[i] == 0) break;
+    text += String.fromCharCode(array[i]);
+  }
+  // console.log(array);
+  return text;
+}
+
+function arrayToHex(array) {
+  let text = "";
+  for (let i = 0; i < array.length; i++) {
+    text += array[i].toString(16).padStart(2,0);
+    if (i == 3) text += "\n";
+  }
+  text += "\n";
+  // console.log(array);
+  return text;
+}
+
+function downloadData() {
+  console.log("Downloading data");
+  console.log(dataArray);
+  const blob = new Blob([dataArray.buffer], {type: 'application/octet-stream'});
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `dmdata.bin`;
+  document.body.appendChild(a);
+  a.style.display = 'none';
+  a.click();
+  a.remove();
+  setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+}
 
 export class Terminal {  
-  constructor(url, update, connect, disconnect, send, events) {
-    this.url = url;
-    this.canSend = true;
-    this.willSend = false;
-    this.connecting = false;
-    this.updateCB = update;
-    this.connectCB = connect;
-    this.disconnectCB = disconnect;
-    this.sendCB = send;
-    this.events = events;
+  constructor(usb, callbacks) {
+    this.usb = usb;
+    this.connected = false;
+    this.callbacks = callbacks
     this.sendButton = document.querySelector("#terminal-send");
+    this.unlockButton = document.querySelector("#terminal-unlock");
     this.input = document.querySelector("#terminal-input");
     this.window = document.querySelector(".terminal-text");
-    this.parseEvents = this.parseEvents.bind(this);
-    // this.update = this.update.bind(this);
     this.sendButton.addEventListener("click", () => {
       this.send();
+    });
+    this.unlockButton.addEventListener("click", () => {
+      this.unlockDM(T1COEFF);
     });
     this.input.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         this.send();
       }
     });
+    this.running;
   }
+
   connect() {
-    try {
-      this.connecting = true;  
-      this.connection = new WebSocket(`ws://${this.url}`);
-      if (this.events) {
-        this.events.removeEventListener("terminal", this.parseEvents);
-        this.events.addEventListener("terminal", this.parseEvents);
-      }
-      this.connection.addEventListener("open", () => {
-        this.connection.send("Connected");
-        this.connecting = false;
-        this.connectCB();
-      });
-      this.connection.addEventListener("error", (error) => {
-        console.log("WebSocket Error ", error);
-        this.connection.close();
-        this.disconnectCB();
-      });
-      this.connection.addEventListener("message", (m) => {
-        if (m.data instanceof Blob) {
-          m.data.text().then((text)=>{
-            if (text[0] == "#") {
-              if (this.updateCB != null) this.updateCB(text.slice(1));
-              this.update(text.slice(1));
-            }
-          });
-        } else {
-          console.log("Server: ", m.data);
-        }
-      });
-      this.connection.addEventListener("close", () => {
-        console.log("WebSocket connection closed");
-        delete this.connection;
-        this.disconnectCB();
-        // let timeout = 500;
-        // setTimeout(this.connect(), Math.min(5000, (timeout += timeout)));
-      });
+    this.usb.connect().then(() => {
+      // this.unlockDM();
+      this.connected = true;
+      this.running = setInterval(() => {
+        this.usb.receive(0xAB).then((result) => {
+          let arr = new Uint8Array(result.buffer);
+          
+          // dataArray.set(arr, dataCounter);
+          // dataCounter += 8;
+          // console.log(arr);
+          // this.update(dataCounter.toString() + "\n");
+          // if (dataCounter >= 4096) {
+          // if (dataCounter >= 8) {
+            // clearInterval(this.running);
+            // this.disconnect();
+          // }
+
+          if (arr[0] & 0x80) {
+            
+            let text = arrayToText(arr.subarray(1,8));
+            this.update(text);
+          }
+        });
+      }, 10);
       this.sendButton.classList.remove("deactive");
-    }
-    catch (err) {
-      console.log(err);
-      this.connecting = false;
-    }
+      if (this.callbacks.connect) this.callbacks.connect();
+    });
+    
   }
+
   disconnect() {
-    // console.log("WebSocket connection closed");
-    this.events.removeEventListener("terminal", this.parseEvents);
-    this.connection.close();
-    // delete this.connection;
-    // this.disconnectCB();
+    this.connected = false;
+    clearInterval(this.running);
+    if (this.usb.running) this.usb.disconnect();
+    if (this.callbacks.disconnect) this.callbacks.disconnect();
+    // downloadData();
+    dataArray.fill(0);
+    dataCounter = 0;
   }
+
+  unlockDM(t1coeff) {
+    let arr = new Uint8Array(79).fill(0);
+    arr[0] =  0xA5;
+    arr[1] = t1coeff;
+    this.usb.send(0xAA, arr).then(() => {
+    });
+  }
+
   send(message = "") {
-    if (!this.canSend) {
-      this.willSend = true;
-      return;
-    }
-    this.canSend = false;
-    this.willSend = false;
-    if (this.connection.readyState === 1) {
+    if (this.connected == true) {
       if (message == "") {
-        this.connection.send(`#${this.input.value}\n`);
         this.update(`>_  ${this.input.value}\n`);
+        let arr = new Uint8Array(7).fill(0);
+        for (let i = 0; i < 7; i++) {
+          arr[i] = this.input.value.charCodeAt(i);
+        }
+        this.usb.send(0xAB, arr).then(() => {this.sendButton.classList.remove("deactive");});
         this.input.value = "";
       } else {
-        this.connection.send(message);
+        //usb.send here
         this.update(`>_ ${message}\n`);
       }
       this.sendButton.classList.add("deactive");
-      setTimeout(() => {
-        this.sendButton.classList.remove("deactive");
-      }, 1000);
-      this.sendCB();
+      // setTimeout(() => {
+      //   this.sendButton.classList.remove("deactive");
+      // }, 1000);
+      
+      
     }
-    
-  }
-  parseEvents(m) {
-    console.log(m.data);
-    if (m.data == "+") {
-      this.canSend = true;
-      this.sendButton.classList.remove("deactive");
-    }
-    if (m.data == "-") {
-      this.canSend = false;
-      this.sendButton.classList.add("deactive");
-    }
+    // let arr = new Uint8Array(79).fill(0);
+    // arr[0] =  0xA5;
+    // arr[1] = t1coeff;
+    // this.usb.send(0xAA, arr).then(() => {
+      // this.update(`${t1coeff}\n`);
+      // t1coeff++;
+      // this.usb.receive(0xAB).then((result) => {
+      //   let arr = new Uint8Array(result.buffer);
+      //   dataArray.set(arr, 8);
+      //   console.log(arr);
+      //   // this.update(dataCounter.toString() + "\n");
+      // });
+    // });
   }
 
   update(text) {
@@ -123,5 +158,6 @@ export class Terminal {
     if (!document.querySelector("#terminal-scroll").classList.contains("deactive")) {
       this.window.scrollTop = this.window.scrollHeight;
     }
+    if (this.callbacks.update) this.callbacks.update();
   }
 }

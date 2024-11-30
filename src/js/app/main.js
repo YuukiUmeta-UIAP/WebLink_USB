@@ -1,6 +1,6 @@
 import { Popup } from "./popup.js";
 import "../custom_select.js"
-// import { Terminal } from "./terminal.js"
+import { Terminal } from "./terminal.js"
 import { Settings } from "./settings.js";
 import { V003WebUSB } from "./webusb_new.js";
 import * as Flasher from "./flasher.js";
@@ -10,6 +10,7 @@ const maxLinesTerminal = 500;
 let canFlash = true;
 let chipInfo = {};
 let backupSelected = "";
+let tInterval;
 
 window.mainJS = true;
 
@@ -24,6 +25,13 @@ const usb = new V003WebUSB(
   {disconnect: disconnectFlasher},
   10
 );
+
+const usbTerminal = new V003WebUSB(
+  "CNLohr RV003 Custom Device",
+  {vendorId: 0x1209, productId: 0xd003},
+  {disconnect: disconnectTerminal},
+  10
+)
 const flasher = new Flasher.Flasher(usb,
   {
     readCB: readProgress,
@@ -37,20 +45,13 @@ const generalSettings = new Settings(document.querySelectorAll(".setting"));
 
 const backups = new Backups(document.querySelector(".card.backups"), 10,
 {selectBackup: selectBackup});
-// url, update, connect, disconnect, send
-// const terminal = new Terminal(`${URL?URL.replace(/(^\w+:|^)\/\//, ''):location.hostname}/terminal`,
-//   (m)=>{},
-//   ()=>{
-//     terminalConnect.classList.add("hide");
-//     terminalControls.classList.remove("hidden");
-//   },
-//   ()=>{
-//     terminalConnect.classList.remove("hide");
-//     terminalControls.classList.add("hidden");
-//   },
-//   ()=>{},
-//   linkEvents
-// );
+
+const terminal = new Terminal(usbTerminal,
+  {
+    connect: connectTerminal,
+    disconnect: disconnectTerminal,
+  }
+)
 
 //Selectors
 const root = document.documentElement;
@@ -74,7 +75,7 @@ const setButs = document.querySelectorAll(".set-buttons > .but");
 const moreButs = document.querySelectorAll(".more");
 const settingsContainer = document.querySelector(".settings-container");
 const setCards = settingsContainer.querySelectorAll(".cards > .card");
-const topButtons = document.querySelector(".top-cell > .content > .top-buttons");
+const topButtons = document.querySelector(".top-buttons");
 const sideButtons = document.querySelectorAll(".side-button-square");
 const topCards = document.querySelectorAll(".top-container > .card");
 const tooltipables = document.querySelectorAll(".tooltip");
@@ -85,6 +86,9 @@ const settingsEntries = document.querySelectorAll(".settings");
 const programmerContainer = document.querySelector(".card.programmer");
 const backupsContainer = document.querySelector(".card.backups");
 const numBackups = document.querySelector("#num-baclups");
+const skipFilterCheck = document.querySelector("#skip-filter");
+const disableTransitionsCheck = document.querySelector("#disable-transitions");
+const productNameInput = document.querySelector("#usb-bootloader-name");
 
 ///////////////////////
 /// Event listeners ///
@@ -172,8 +176,15 @@ about.addEventListener("click", () => {
 });
 
 terminalConnect.addEventListener("click", () => {
-  // terminal.connect();
-  // terminalControls.classList.remove("hidden");
+  // usb.connect().then(() => {
+  //   tInterval = setInterval(async () => {
+  //     usb.receive(0xAB).then((result) => {
+  //       let arr = new Uint8Array(result.buffer);
+  //       if (arr[0] & 0x80) console.log(arr);
+  //     });
+  //   }, 10);
+  // });
+  terminal.connect();
 });
 
 document.querySelector("#terminal-scroll").addEventListener("click", () => {
@@ -326,6 +337,19 @@ firmwareContainer.addEventListener("drop", (e) => {
   // firmwareLabel.innerHTML = firmware.value.split('\\').pop();
 });
 
+productNameInput.addEventListener("change", (e)=> {
+  usb.productName = generalSettings._getValue(e.target);
+});
+
+skipFilterCheck.addEventListener("change", () => {
+  usb.skipFilter = skipFilterCheck.checked;
+  usbTerminal.skipFilter = skipFilterCheck.checked;
+});
+
+disableTransitionsCheck.addEventListener("change", (e) => {
+  disableTransitions(e.target.checked);
+});
+
 ////////////////////////////////////
 ///  END of event handlers////// ///
 ////////////////////////////////////
@@ -346,12 +370,17 @@ function init() {
       "px"
   );
   drawCog(settingsBut);
-  animateMicro();
-  populateSettings();
+  generalSettings.populateUI();
+  console.log(generalSettings);
+  if (generalSettings["disable-transitions"]) disableTransitions(true);
+  animateMicro(generalSettings["disable-transitions"]);
   backups.populate();
   backups.updateContainer();
-  backups.setLength(generalSettings.num-backups);
-  // console.log(generalSettings);
+  backups.setLength(generalSettings["num-backups"]);
+  usbTerminal.skipFilter = generalSettings["skip-filter"];
+  usb.skipFilter = generalSettings["skip-filter"];
+  usb.productName = generalSettings["usb-bootloader-name"];
+  
   // navigator.usb.addEventListener("connect", (event) => {
   //   console.log(event);
   // });
@@ -395,6 +424,18 @@ async function connectFlasher() {
     });
     connectButton.classList.add("hide");
   }).catch((e) => {console.log("Flasher failed to connect", e)});
+}
+
+function connectTerminal() {
+  terminalConnect.classList.add("hide");
+  terminalControls.classList.remove("hidden");
+}
+
+function disconnectTerminal() {
+  if (usbTerminal.connected) usbTerminal.disconnect();
+  if (terminal.connected) terminal.disconnect();
+  terminalConnect.classList.remove("hide");
+  terminalControls.classList.add("hidden");
 }
 
 function switchCard(c, b) {
@@ -447,21 +488,27 @@ function switchCards(cards, selectedCard, buttons, activeButton) {
   });
 }
 
-function animateMicro() {
-    micro.classList.remove("closed");
+function animateMicro(noTransitions) {
+  micro.classList.remove("closed");
+  let topContent = document.querySelector(".top-cell > .content");
+  let content = document.querySelector(".micro > .content");
+  if (noTransitions) {
+    content.classList.add("visible");
+    topContent.classList.remove("hidden");
+    topButtons.classList.remove("hidden");
+    content.classList.remove("hidden");
+    micro.classList.add("open")  
+  } else {   
     micro.style.height="25rem";
     micro.addEventListener("transitionend", () => {
-      let topContent = document.querySelector(".top-cell > .content");
-      let content = document.querySelector(".micro > .content");
-      // console.log(topButtons);
       content.classList.add("visible");
       topContent.classList.remove("hidden");
       topButtons.classList.remove("hidden");
       content.classList.remove("hidden");
       micro.classList.add("open")
       micro.style.height=null;
-
     }, {once: true});
+  }
 }
 
 // const microObserver = new MutationObserver((m) => {
@@ -511,10 +558,6 @@ function toggleMore(el, state = null) {
   }
 }
 
-async function populateSettings() {
-  generalSettings.populateUI();
-}
-
 // function updateTerminalWindow(text) {
 //   let newText = terminalText.value + text;
 //   let lines = newText.split("\n");
@@ -541,7 +584,7 @@ function settingsListener(e) {
 function toggleSettings(e) {
   if (e) e.stopPropagation();
   if (settingsContainer.classList.contains("hide")) {
-    populateSettings();
+    generalSettings.populateUI();
     settingsContainer.classList.remove("hide");
     switchCard(settingsContainer.querySelector(".set.card"), settingsContainer.querySelector(".set.but"));
     window.addEventListener('click', settingsListener);
@@ -590,6 +633,7 @@ function flashBackup(name, address, size) {
     canFlash = true;
   });
 }
+
 function selectBackup(name) {
   backupSelected = name;
   firmware.value = null;
@@ -604,7 +648,7 @@ function resetFileInput(el) {
 
 function checkFirmwareFile() {
   backupSelected = "";
-  if (firmware.files[0].type != "application/octet-stream" && firmware.files[0].size <= 16384) {
+  if (firmware.files[0].type != "application/octet-stream" && firmware.files[0].type != "application/macbinary" && firmware.files[0].size <= 16384) {
     console.log("Wrong file type");
     console.log(firmware.files[0].type);
     popup.draw("ignore-file-type", {cb: ()=>{resetFileInput(firmware)}});
@@ -614,6 +658,30 @@ function checkFirmwareFile() {
     flashButton.classList.add("hidden");
     firmwareLabel.innerText = "Select binary";
     popup.draw("alert", {alertText: "File size is too big for ch32v003. Max size is 16384 bytes"});
+  }
+}
+
+function disableTransitions(disable) {
+  if (disable) {
+    settingsContainer.classList.add("notransition");
+    topButtons.classList.add("notransition");
+    topCards.forEach((el) => {
+      el.classList.add("notransition");
+    });
+    document.querySelector(".popup-container").classList.add("notransition");
+    micro.classList.add("notransition");
+    document.querySelector(".top-cell > .content").classList.add("notransition");
+    document.querySelector(".micro > .content").classList.add("notransition");
+  } else {
+    settingsContainer.classList.remove("notransition");
+    topButtons.classList.remove("notransition");
+    topCards.forEach((el) => {
+      el.classList.remove("notransition");
+    });
+    document.querySelector(".popup-container").classList.remove("notransition");
+    micro.classList.remove("notransition");
+    document.querySelector(".top-cell > .content").classList.remove("notransition");
+    document.querySelector(".micro > .content").classList.remove("notransition");
   }
 }
 

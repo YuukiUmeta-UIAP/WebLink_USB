@@ -17,7 +17,7 @@ export class Popup {
         this.makeButton("Cancel", this.closePopup);
         break;
       case "ignore-file-type":
-        this.makeAlert("Selected file is not binary. Are you sure you want to proceed?");
+        this.makeAlert("Selected file is not a binary. Are you sure you want to proceed?");
         this.makeButton("Yes", ()=>{
           this.closePopup();
           });

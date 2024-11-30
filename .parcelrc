@@ -4,4 +4,7 @@
 		"parcel-namer-sorter",
 		"..."
 	],
+  "optimizers": {
+    "*.html": []
+  }
 }

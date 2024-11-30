@@ -11,6 +11,7 @@ export class V003WebUSB {
     this.maxErrorCnt = maxErrorCnt;
     this.running;
     this.pingID = pingID;
+    this.skipFilter = false;
     if (pingID == undefined) this.pingID = 0xAA;
   }
 
@@ -38,7 +39,7 @@ export class V003WebUSB {
                 resolve(result);
               }, reject);
             } else {
-              if(devices[0].productName != productName) {
+              if(devices[0].productName != productName && !this.skipFilter) {
                 this.error("No correct device connected");
                 reject(-2);
               } else {
@@ -79,7 +80,7 @@ export class V003WebUSB {
           this.error("No devices found");
           reject(-2);
         } else {
-          if (result[0].productName != productName) {
+          if (result[0].productName != productName && !this.skipFilter) {
             this.error("Not correct device name");
             reject(-3);
           } else {
