@@ -20,18 +20,19 @@ let docHeight = Math.max(
 );
 
 const usb = new V003WebUSB(
-  "cnlohr rv003usb",
-  {vendorId: 0x1209, productId: 0xb003},
+  "UIAPduino Pro Micro CH32V003 V1.4",
+  {vendorId: 0x1209, productId: 0xb803},
   {disconnect: disconnectFlasher},
   10
 );
 
 const usbTerminal = new V003WebUSB(
-  "CNLohr RV003 Custom Device",
-  {vendorId: 0x1209, productId: 0xd003},
+  "UIAPduino Pro Micro CH32V003 V1.4 Custom Device",
+  {vendorId: 0x1209, productId: 0xd803},
   {disconnect: disconnectTerminal},
   10
 )
+
 const flasher = new Flasher.Flasher(usb,
   {
     readCB: readProgress,
