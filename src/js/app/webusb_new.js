@@ -19,12 +19,12 @@ export class V003WebUSB {
     if (!productName) productName = this.productName;
     if (!filter) filter = this.filter;
     return new Promise((resolve, reject) => {
-      if (!navigator.hid) {
+      if (!navigator.usb) {
         this.error("Browser does not support HID.");
         reject(-1);
       }
       if (!this.dev) {
-        navigator.hid.getDevices().then((devices) => {
+        navigator.usb.getDevices().then((devices) => {
           if (devices.length == 0) {
             // this.error("Device not found");
             this.selectDevice(productName, filter).then((result) => {
@@ -53,12 +53,12 @@ export class V003WebUSB {
         })
       } 
     })
-    if (!navigator.hid) {
+    if (!navigator.usb) {
       this.error("Browser does not support HID.");
       return -1;
     }
     if (!this.dev) {
-      navigator.hid.getDevices().then((devices) => {
+      navigator.usb.getDevices().then((devices) => {
         if (devices.length == 0) {
           this.error("Device not found");
           this.selectDevice();
@@ -75,7 +75,7 @@ export class V003WebUSB {
     if (!productName) productName = this.productName;
     if (!filter) filter = this.filter;
     return new Promise ((resolve, reject) => {
-      navigator.hid.requestDevice({filters: [filter]}).then((result) => {
+      navigator.usb.requestDevice({filters: [filter]}).then((result) => {
         if (result.length < 1) {
           this.error("No devices found");
           reject(-2);
