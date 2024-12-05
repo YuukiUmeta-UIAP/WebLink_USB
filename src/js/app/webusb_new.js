@@ -80,11 +80,11 @@ export class V003WebUSB {
           this.error("No devices found");
           reject(-2);
         } else {
-          if (result[0].productName != productName && !this.skipFilter) {
+          if (result.productName != productName && !this.skipFilter) {
             this.error("Not correct device name");
             reject(-3);
           } else {
-            this.openDevice(result[0]).then(resolve);
+            this.openDevice(result).then(resolve);
           }
         }
       }).catch((e) => {
